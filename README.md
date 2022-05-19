@@ -1,4 +1,4 @@
-# team003-SheilaKiJawani
+# Rate My Apartment
 
 Project Summary
 Our project is “Rate My Apartment.” Oftentimes, students have difficulty selecting off-campus housing options that are right for them due to a lack of information available to them. However, being able to see other residents’ and students’ prior experiences will help students make an informed decision and find an apartment perfect for their needs. Our app provides a centralized location for all of the reviews and opinions about various apartments to be congregated at. This application is useful because it is personal to the area around it and will be more comprehensive than Google Reviews on locations as it is specifically geared towards features unique to an apartment.
