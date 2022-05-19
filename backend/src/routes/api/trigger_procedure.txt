@@ -1,0 +1,97 @@
+delimiter $$
+CREATE PROCEDURE rate_my_apartment.ManagementBooster()
+BEGIN
+    DECLARE grop VARCHAR(100);
+    DECLARE maxScore INT;
+    SELECT MAX(MgmtAvgScore) INTO maxScore 
+    FROM (
+        SELECT AVG(OverallAvgScore) AS MgmtAvgScore
+        FROM Review NATURAL JOIN Apartment NATURAL JOIN Management
+        GROUP BY ManagementName
+    ) t;
+
+    IF (maxScore >= 4) THEN SET grop = 'Gold At Best';
+    ELSEIF (maxScore > 3 AND maxScore <= 4) THEN SET grop = 'Silver At Best';
+    ELSEIF (maxScore <= 3 AND maxScore > 2) THEN SET grop = 'Bronze At Best';
+    ELSEIF (maxScore <= 2) THEN SET grop = 'Steel at Best';
+    
+    END IF;
+
+    SELECT grop;
+END; $$
+delimiter;
+
+Trigger #1
+      delimiter $$
+      CREATE TRIGGER  Update_Review_On_Delete  AFTER DELETE ON Comment
+      FOR EACH ROW
+      BEGIN
+      
+      DECLARE newOverallAvgScore REAL;
+      DECLARE newNoiseAvgScore REAL;
+      DECLARE newLocationAvgScore REAL;
+      DECLARE newWifiAvgScore REAL;
+      DECLARE CommentCount INT;
+      DECLARE TmpOverallAvgScore REAL;
+      DECLARE TmpNoiseAvgScore REAL;
+      DECLARE TmpLocationAvgScore REAL;
+      DECLARE TmpWifiAvgScore REAL;
+      SET TmpOverallAvgScore = (SELECT OverallAvgScore FROM Review WHERE ApartmentId = OLD.ApartmentId);
+      SET TmpNoiseAvgScore = (SELECT NoiseAvgScore FROM Review WHERE ApartmentId = OLD.ApartmentId);
+      SET TmpLocationAvgScore = (SELECT LocationAvgScore FROM Review WHERE ApartmentId = OLD.ApartmentId);
+      SET TmpWifiAvgScore = (SELECT WifiAvgScore FROM Review WHERE ApartmentId = OLD.ApartmentId);
+      SET CommentCount = (SELECT COUNT(*) FROM Comment WHERE ApartmentId = OLD.ApartmentId);
+      IF CommentCount = 0 THEN
+        SET newOverallAvgScore = 0;
+        SET newNoiseAvgScore = 0;
+        SET newLocationAvgScore = 0;
+        SET newWifiAvgScore = 0;
+      ELSE
+        SET newOverallAvgScore = (TmpOverallAvgScore * (CommentCount + 1) - OLD.OverallScore) / CommentCount;
+        SET newNoiseAvgScore = (TmpNoiseAvgScore * (CommentCount + 1) - OLD.NoiseScore) / CommentCount;
+        SET newLocationAvgScore = (TmpLocationAvgScore * (CommentCount + 1) - OLD.LocationScore) / CommentCount;
+        SET newWifiAvgScore = (TmpWifiAvgScore * (CommentCount + 1) - OLD.WifiScore) / CommentCount;
+      END IF;
+      UPDATE Review SET
+      OverallAvgScore = newOverallAvgScore
+      , NoiseAvgScore = newNoiseAvgScore
+      , LocationAvgScore = newLocationAvgScore
+      , WifiAvgScore = newWifiAvgScore
+      WHERE ApartmentId = OLD.ApartmentId;
+      END; $$
+      delimiter;
+      
+Trigger #2
+      delimiter $$
+      CREATE TRIGGER  Update_Review_On_Insert  AFTER INSERT ON Comment 
+      FOR EACH ROW
+      BEGIN
+      
+      DECLARE newOverallAvgScore REAL;
+      DECLARE newNoiseAvgScore REAL;
+      DECLARE newLocationAvgScore REAL;
+      DECLARE newWifiAvgScore REAL;
+      DECLARE CommentCount INT;
+      DECLARE TmpOverallAvgScore REAL;
+      DECLARE TmpNoiseAvgScore REAL;
+      DECLARE TmpLocationAvgScore REAL;
+      DECLARE TmpWifiAvgScore REAL;
+      SET TmpOverallAvgScore = (SELECT OverallAvgScore FROM Review WHERE ApartmentId = OLD.ApartmentId);
+      SET TmpNoiseAvgScore = (SELECT NoiseAvgScore FROM Review WHERE ApartmentId = OLD.ApartmentId);
+      SET TmpLocationAvgScore = (SELECT LocationAvgScore FROM Review WHERE ApartmentId = OLD.ApartmentId);
+      SET TmpWifiAvgScore = (SELECT WifiAvgScore FROM Review WHERE ApartmentId = OLD.ApartmentId);
+      SET CommentCount = (SELECT COUNT(*) FROM Comment WHERE ApartmentId = OLD.ApartmentId);
+      
+      SET newOverallAvgScore = (TmpOverallAvgScore * (CommentCount + 1) - NEW.OverallScore) / CommentCount;
+      SET newNoiseAvgScore = (TmpNoiseAvgScore * (CommentCount + 1) - NEW.NoiseScore) / CommentCount;
+      SET newLocationAvgScore = (TmpLocationAvgScore * (CommentCount + 1) - NEW.LocationScore) / CommentCount;
+      SET newWifiAvgScore = (TmpWifiAvgScore * (CommentCount + 1) - NEW.WifiScore) / CommentCount;
+
+      UPDATE Review SET OverallAvgScore = newOverallAvgScore,
+                        NoiseAvgScore = newNoiseAvgScore,
+                        LocationAvgScore = newLocationAvgScore,
+                        WifiAvgScore = newWifiAvgScore
+                        WHERE ApartmentId = NEW.CommentId
+
+      END; $$
+      delimiter;
